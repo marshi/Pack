@@ -7,6 +7,8 @@ import androidx.core.content.edit
 import androidx.lifecycle.*
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.isAccessible
+import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaGetter
 
 fun Intent.putPackedExtra(context: Context, key: String, content: String) {
@@ -20,7 +22,9 @@ fun <T : Parcelable> Intent.putPackedExtra(context: Context, key: String, conten
   content::class.memberProperties.forEach {
     println(it.name)
     if (it.findAnnotation<Pack>() != null) {
+      it.isAccessible = true
       it.javaGetter?.invoke(content)
+      it.javaField?.set(content, "")
     }
   }
   val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
