@@ -12,7 +12,8 @@ class MainActivity2 : AppCompatActivity() {
 
     fun creteIntent(context: Context) =
       Intent(context, MainActivity2::class.java).apply {
-        putPackedExtra(context, EXTRA, "a".repeat(1000000))
+        val content = Data("a".repeat(10), 10)
+        putPackedExtra(context, EXTRA, content)
       }
 
   }
