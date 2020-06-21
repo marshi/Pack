@@ -5,6 +5,11 @@ import android.content.Intent
 import android.os.Parcelable
 import androidx.core.content.edit
 import androidx.lifecycle.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.stringify
+import java.io.Serializable
+import java.lang.IllegalStateException
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
@@ -18,22 +23,48 @@ fun Intent.putPackedExtra(context: Context, key: String, content: String) {
   }
 }
 
-fun <T : Parcelable> Intent.putPackedExtra(context: Context, key: String, content: T) {
+fun <T> Intent.putPackedExtra(context: Context, key: String, content: T) where T : Parcelable {
   content::class.memberProperties.forEach {
-    println(it.name)
     if (it.findAnnotation<Pack>() != null) {
       it.isAccessible = true
-      it.javaGetter?.invoke(content)
+      val value = it.javaGetter?.invoke(content) ?: IllegalStateException()
       it.javaField?.set(content, "")
+      val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
+      sharedPreferences.edit {
+        putString(key, value as String) // ほんとはintentのkeyと違うkeyにするべき.
+      }
     }
   }
-  val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
-  sharedPreferences.edit {
-    putExtra(key, content)
-  }
+  putExtra(key, content)
 }
 
-fun <T> Intent.getPackedExtra(
+
+fun <T, R> Intent.getPackedExtra(
+  context: T,
+  key: String
+): R where T : Context, T : LifecycleOwner, R : Parcelable {
+  val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
+  val observer = object : LifecycleObserver {
+    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    fun onDestroy() {
+      sharedPreferences.edit {
+        remove(key)
+      }
+    }
+  }
+  val value = sharedPreferences.getString(key, null)
+  val content = getParcelableExtra<R>(key)
+  content::class.memberProperties.forEach {
+    if (it.findAnnotation<Pack>() != null) {
+      it.isAccessible = true
+      it.javaField?.set(content, value)
+    }
+  }
+  context.lifecycle.addObserver(observer)
+  return content
+}
+
+fun <T> Intent.getPackedExtraString(
   context: T,
   key: String
 ): String? where T : Context, T : LifecycleOwner {

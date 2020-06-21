@@ -1,11 +1,12 @@
 package dev.marshi.android.pack
 
 import android.os.Parcelable
-import kotlinx.android.parcel.IgnoredOnParcel
 import kotlinx.android.parcel.Parcelize
+import kotlinx.serialization.Serializable
 
+@Serializable
 @Parcelize
-class Data constructor(
+data class Data constructor(
   @Pack val content: String,
   val int: Int
 ) : Parcelable
