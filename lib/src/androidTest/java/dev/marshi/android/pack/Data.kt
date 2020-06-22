@@ -2,12 +2,10 @@ package dev.marshi.android.pack
 
 import android.os.Parcelable
 import kotlinx.android.parcel.Parcelize
-import kotlinx.serialization.Serializable
 
-@Serializable
 @Parcelize
-data class Data(
+class Data(
   @Pack val int: Int,
-  @Pack val content: String,
-  val non: String
-) : Parcelable
+  @Pack val str: String,
+  val nonValue: String
+): Parcelable
