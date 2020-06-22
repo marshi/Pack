@@ -44,14 +44,6 @@ fun <T, R> Intent.getPackedExtra(
   key: String
 ): R where T : Context, T : LifecycleOwner, R : Parcelable {
   val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
-  val observer = object : LifecycleObserver {
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    fun onDestroy() {
-      sharedPreferences.edit {
-        remove(key)
-      }
-    }
-  }
   val value = sharedPreferences.getString(key, null)
   val content = getParcelableExtra<R>(key)
   content::class.memberProperties.forEach {
@@ -60,7 +52,7 @@ fun <T, R> Intent.getPackedExtra(
       it.javaField?.set(content, value)
     }
   }
-  context.lifecycle.addObserver(observer)
+  context.lifecycle.addObserver(CleanSharedPreferenceObserver(sharedPreferences, key))
   return content
 }
 
@@ -68,17 +60,8 @@ fun <T> Intent.getPackedExtraString(
   context: T,
   key: String
 ): String? where T : Context, T : LifecycleOwner {
-
   val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
   val string = sharedPreferences.getString(key, null)
-  val observer = object : LifecycleObserver {
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    fun onDestroy() {
-      sharedPreferences.edit {
-        remove(key)
-      }
-    }
-  }
-  context.lifecycle.addObserver(observer)
+  context.lifecycle.addObserver(CleanSharedPreferenceObserver(sharedPreferences, key))
   return string
 }
