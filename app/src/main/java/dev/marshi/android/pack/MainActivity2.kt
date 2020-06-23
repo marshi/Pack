@@ -1,11 +1,9 @@
 package dev.marshi.android.pack
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import kotlinx.serialization.json.Json
 
 class MainActivity2 : AppCompatActivity() {
 
@@ -14,7 +12,7 @@ class MainActivity2 : AppCompatActivity() {
 
     fun creteIntent(context: Context) =
       Intent(context, MainActivity2::class.java).apply {
-        val content = Data("a".repeat(1000000), 10)
+        val content = Data(10, "a".repeat(100000), "non")
         putPackedExtra(context, EXTRA, content)
       }
 
