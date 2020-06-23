@@ -12,10 +12,9 @@ class MainActivity2 : AppCompatActivity() {
 
     fun creteIntent(context: Context) =
       Intent(context, MainActivity2::class.java).apply {
-        val content = Data(10, "a".repeat(10), 1000L, "non")
+        val content = Data(10, "a".repeat(10), 1000L, SubData("sub".repeat(1000000)), "non")
         putPackedExtra(context, EXTRA, content)
       }
-
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {

@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.os.Parcelable
 import androidx.core.content.edit
 import androidx.lifecycle.LifecycleOwner
+import java.io.Serializable
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
@@ -19,11 +20,15 @@ fun Intent.putPackedExtra(context: Context, key: String, content: String) {
   }
 }
 
-fun <T> Intent.putPackedExtra(context: Context, key: String, content: T) where T : Parcelable {
+fun <T> Intent.putPackedExtra(context: Context, key: String, content: T) where T : Serializable {
   content::class.memberProperties.forEach {
     if (it.findAnnotation<Pack>() != null) {
       it.isAccessible = true
       val value = it.javaGetter?.invoke(content) ?: return@forEach
+      if (Serializable::class.isInstance(value) && !isPrimitive(value)) {
+        putPackedExtra(context, "${key}_${it.name}", value as Serializable)
+        return@forEach
+      }
       val nullValue = nullValue(value)
       nullValue?.let { v ->
         it.javaField?.set(content, v)
@@ -36,6 +41,15 @@ fun <T> Intent.putPackedExtra(context: Context, key: String, content: T) where T
   }
   putExtra(key, content)
 }
+
+fun isPrimitive(value: Any?) =
+  String::class.isInstance(value) ||
+      Int::class.isInstance(value) ||
+      Float::class.isInstance(value) ||
+      Double::class.isInstance(value) ||
+      Boolean::class.isInstance(value) ||
+      Long::class.isInstance(value)
+
 
 fun nullValue(value: Any) = when {
   String::class.isInstance(value) -> ""
@@ -73,19 +87,23 @@ fun SharedPreferences.get(key: String, value: Any?) = when {
 fun <T, R> Intent.getPackedExtra(
   context: T,
   key: String
-): R where T : Context, T : LifecycleOwner, R : Parcelable {
+): R where T : Context, T : LifecycleOwner, R: Serializable {
   val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
-  val content = getParcelableExtra<R>(key)
+  val content = getSerializableExtra(key)
   content::class.memberProperties.forEach {
     if (it.findAnnotation<Pack>() != null) {
       val v = it.javaGetter?.invoke(content)
       it.isAccessible = true
-      val value = sharedPreferences.get("${key}_${it.name}", v)
+      val value = if (Serializable::class.isInstance(v) && !isPrimitive(v)) {
+        getPackedExtra(context, "${key}_${it.name}")
+      } else {
+        sharedPreferences.get("${key}_${it.name}", v)
+      }
       it.javaField?.set(content, value)
     }
   }
   context.lifecycle.addObserver(CleanSharedPreferenceObserver(sharedPreferences, key))
-  return content
+  return content as R
 }
 
 fun <T> Intent.getPackedExtraString(
