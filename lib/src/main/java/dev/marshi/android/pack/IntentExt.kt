@@ -84,10 +84,10 @@ fun SharedPreferences.get(key: String, value: Any?) = when {
   else -> null
 }
 
-fun <T, R> Intent.getPackedExtra(
+fun <T, R : Serializable> Intent.getPackedExtra(
   context: T,
   key: String
-): R where T : Context, T : LifecycleOwner, R: Serializable {
+): R where T : Context, T : LifecycleOwner {
   val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
   val content = getSerializableExtra(key)
   content::class.memberProperties.forEach {
