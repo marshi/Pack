@@ -23,7 +23,7 @@ fun <T> Intent.putPackedExtra(context: Context, key: String, content: T) where T
   content::class.memberProperties.forEach {
     if (it.findAnnotation<Pack>() != null) {
       it.isAccessible = true
-      val value = it.javaGetter?.invoke(content) ?: IllegalStateException()
+      val value = it.javaGetter?.invoke(content) ?: return@forEach
       val nullValue = nullValue(value)
       nullValue?.let { v ->
         it.javaField?.set(content, v)

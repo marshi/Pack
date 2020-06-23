@@ -9,5 +9,6 @@ import kotlinx.serialization.Serializable
 data class Data(
   @Pack val int: Int,
   @Pack val content: String,
+  @Pack val long: Long,
   val non: String
 ) : Parcelable
