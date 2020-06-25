@@ -2,6 +2,7 @@ package dev.marshi.android.pack
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 
@@ -12,7 +13,7 @@ class MainActivity2 : AppCompatActivity() {
 
     fun creteIntent(context: Context) =
       Intent(context, MainActivity2::class.java).apply {
-        val content = Data(10, "a".repeat(10), 1000L, SubData("sub".repeat(1000000)), "non")
+        val content = Data(10, "a".repeat(10), 1000L, SubData("sub".repeat(1000000)), Bitmap.createBitmap(10, 10, Bitmap.Config.ALPHA_8), "non")
         putPackedExtra(context, EXTRA, content)
       }
   }
