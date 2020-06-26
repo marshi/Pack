@@ -3,11 +3,16 @@ package dev.marshi.android.pack
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Bitmap
 import android.os.Parcelable
 import androidx.core.content.edit
 import androidx.lifecycle.LifecycleOwner
 import com.google.gson.Gson
 import java.io.Serializable
+import java.lang.ClassCastException
+import java.lang.IllegalArgumentException
+import kotlin.reflect.KClass
+import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
@@ -23,14 +28,19 @@ fun Intent.putPackedExtra(context: Context, key: String, content: String) {
 
 fun Intent.putPackedExtra(context: Context, key: String, content: Any, root: Boolean = true) {
   val memberProperties = content::class.memberProperties
+  val allNotPackProperties = memberProperties.all { it.findAnnotation<Pack>() == null }
   memberProperties.forEach {
-    if (it.findAnnotation<Pack>() != null) {
+    if (allNotPackProperties || it.findAnnotation<Pack>() != null) {
       it.isAccessible = true
       val value = it.javaGetter?.invoke(content) ?: return@forEach
+      if (value !is Serializable) {
+        return@forEach
+      }
       val nullValue = nullValue(value)
-//      nullValue?.let { v ->
-      it.javaField?.set(content, nullValue)
-//      }
+      nullValue?.let { v ->
+        it.javaField?.set(content, nullValue)
+      }
+//      Bitmap.createBitmap(10, 10, Bitmap.Config.ALPHA_8).getHeight()
       if (isPrimitive(value)) {
         val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
         sharedPreferences.edit { put("${key}_${it.name}", value) }
@@ -41,17 +51,47 @@ fun Intent.putPackedExtra(context: Context, key: String, content: Any, root: Boo
       }
     }
   }
-//  if (!root) { // @packかつオブジェクトかつpropertyの@packは退避済.
+//  if (!root && memberProperties.all { it.findAnnotation<Pack>() == null}) { // @packかつオブジェクトかつpropertyの@packは退避済.
 //    val message = Gson().toJson(content)
 //    val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
 //    sharedPreferences.edit { putString("$key", message) }
 //    return
-  if(root) {
-    when (content) {
-      is Serializable -> putExtra(key, content)
-      is Parcelable -> putExtra(key, content)
+//  } else {
+  when (content) {
+    is Serializable -> putExtra(key, content)
+    is Parcelable -> putExtra(key, content)
+    else -> throw IllegalArgumentException()
+//    }
+  }
+}
+
+fun <T, Any> Intent.getPackedExtra(
+  context: T,
+  key: String
+): Any? where T : Context, T : LifecycleOwner {
+  val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
+  val content = getSerializableExtra(key) ?: getParcelableExtra<Parcelable>(key) ?: return null
+
+  content::class.memberProperties.forEach { prop ->
+    val v = prop.javaGetter?.invoke(content)
+    val klass = prop.javaGetter?.returnType?.kotlin ?: return@forEach
+    prop.isAccessible = true
+    val value = if (prop.findAnnotation<Pack>() != null) {
+      if (isPrimitive(v)) {
+        sharedPreferences.get("${key}_${prop.name}", v)
+      } else {
+        getPackedExtra(context, "${key}_${prop.name}")
+      }
+    } else {
+      val message = sharedPreferences.getString("${key}_${prop.name}", null)
+      Gson().fromJson(message, klass.java)
+    }
+    value?.let {
+      prop.javaField?.set(content, it)
     }
   }
+  context.lifecycle.addObserver(CleanSharedPreferenceObserver(sharedPreferences, key))
+  return content as Any?
 }
 
 fun isPrimitive(value: Any?) =
@@ -93,31 +133,6 @@ fun SharedPreferences.get(key: String, value: Any?) = when {
   Boolean::class.isInstance(value) -> getBoolean(key, false)
   Long::class.isInstance(value) -> getLong(key, 0L)
   else -> null
-}
-
-fun <T, Any> Intent.getPackedExtra(
-  context: T,
-  key: String
-): Any? where T : Context, T : LifecycleOwner {
-  val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
-  val content = getSerializableExtra(key) ?: getParcelableExtra<Parcelable>(key) ?: return null
-  content::class.memberProperties.forEach {
-    val v = it.javaGetter?.invoke(content)
-    it.isAccessible = true
-    val value = if (it.findAnnotation<Pack>() != null) {
-      if (isPrimitive(v)) {
-        sharedPreferences.get("${key}_${it.name}", v)
-      } else {
-        getPackedExtra(context, "${key}_${it.name}")
-      }
-    } else {
-      val message = sharedPreferences.getString("${key}_${it.name}", null)
-      Gson().fromJson(message, v!!::class.java)
-    }
-    it.javaField?.set(content, value)
-  }
-  context.lifecycle.addObserver(CleanSharedPreferenceObserver(sharedPreferences, key))
-  return content as Any?
 }
 
 fun <T> Intent.getPackedExtraString(

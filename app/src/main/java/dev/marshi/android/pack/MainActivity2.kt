@@ -13,7 +13,14 @@ class MainActivity2 : AppCompatActivity() {
 
     fun creteIntent(context: Context) =
       Intent(context, MainActivity2::class.java).apply {
-        val content = Data(10, "a".repeat(10), 1000L, SubData("sub".repeat(1000000)), Bitmap.createBitmap(10, 10, Bitmap.Config.ALPHA_8), "non")
+        val content = Data(
+          10,
+          "a".repeat(10),
+          1000L,
+          SubData("sub".repeat(1000000)),
+          Bitmap.createBitmap(10, 10, Bitmap.Config.ALPHA_8),
+          "non"
+        )
         putPackedExtra(context, EXTRA, content)
       }
   }
@@ -21,7 +28,7 @@ class MainActivity2 : AppCompatActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main2)
-    val packedExtra = intent.getPackedExtra<AppCompatActivity, Data>(this, EXTRA)
+    val packedExtra = intent.getPackedExtra<AppCompatActivity, Data>(this, EXTRA, Data::class)
     println(packedExtra)
   }
 }
