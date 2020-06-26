@@ -19,13 +19,6 @@ import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaGetter
 
-fun Intent.putPackedExtra(context: Context, key: String, content: String) {
-  val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
-  sharedPreferences.edit {
-    putString(key, content)
-  }
-}
-
 fun Intent.putPackedExtra(context: Context, key: String, content: Any, root: Boolean = true) {
   val memberProperties = content::class.memberProperties
   val allNotPackProperties = memberProperties.all { it.findAnnotation<Pack>() == null }
@@ -40,7 +33,6 @@ fun Intent.putPackedExtra(context: Context, key: String, content: Any, root: Boo
       nullValue?.let { v ->
         it.javaField?.set(content, nullValue)
       }
-//      Bitmap.createBitmap(10, 10, Bitmap.Config.ALPHA_8).getHeight()
       if (isPrimitive(value)) {
         val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
         sharedPreferences.edit { put("${key}_${it.name}", value) }
@@ -51,17 +43,11 @@ fun Intent.putPackedExtra(context: Context, key: String, content: Any, root: Boo
       }
     }
   }
-//  if (!root && memberProperties.all { it.findAnnotation<Pack>() == null}) { // @packかつオブジェクトかつpropertyの@packは退避済.
-//    val message = Gson().toJson(content)
-//    val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
-//    sharedPreferences.edit { putString("$key", message) }
-//    return
-//  } else {
+
   when (content) {
     is Serializable -> putExtra(key, content)
     is Parcelable -> putExtra(key, content)
     else -> throw IllegalArgumentException()
-//    }
   }
 }
 
@@ -133,14 +119,4 @@ fun SharedPreferences.get(key: String, value: Any?) = when {
   Boolean::class.isInstance(value) -> getBoolean(key, false)
   Long::class.isInstance(value) -> getLong(key, 0L)
   else -> null
-}
-
-fun <T> Intent.getPackedExtraString(
-  context: T,
-  key: String
-): String? where T : Context, T : LifecycleOwner {
-  val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
-  val string = sharedPreferences.getString(key, null)
-  context.lifecycle.addObserver(CleanSharedPreferenceObserver(sharedPreferences, key))
-  return string
 }
