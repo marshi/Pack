@@ -18,7 +18,7 @@ class MainActivity2 : AppCompatActivity() {
           "a".repeat(10),
           1000L,
           SubData("sub".repeat(10), SubDataParcelable("1".repeat(10000000))),
-          Bitmap.createBitmap(10, 10, Bitmap.Config.ALPHA_8),
+//          Bitmap.createBitmap(10, 10, Bitmap.Config.ALPHA_8),
           "non"
         )
         putPackedExtra(context, EXTRA, content)

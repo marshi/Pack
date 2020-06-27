@@ -74,7 +74,7 @@ fun <T, Any> Intent.getPackedExtra(
   return content as Any?
 }
 
-fun isPrimitive(value: Any?) =
+private fun isPrimitive(value: Any?) =
   String::class.isInstance(value) ||
       Int::class.isInstance(value) ||
       Float::class.isInstance(value) ||
@@ -83,7 +83,7 @@ fun isPrimitive(value: Any?) =
       Long::class.isInstance(value)
 
 
-fun nullValue(value: Any) = when {
+private fun nullValue(value: Any) = when {
   String::class.isInstance(value) -> ""
   Int::class.isInstance(value) -> 0
   Float::class.isInstance(value) -> 0f
@@ -93,7 +93,7 @@ fun nullValue(value: Any) = when {
   else -> null
 }
 
-fun SharedPreferences.Editor.put(key: String, value: Any) {
+private fun SharedPreferences.Editor.put(key: String, value: Any) {
   when {
     String::class.isInstance(value) -> putString(key, value as String)
     Int::class.isInstance(value) -> putInt(key, value as Int)
@@ -105,7 +105,7 @@ fun SharedPreferences.Editor.put(key: String, value: Any) {
   }
 }
 
-fun SharedPreferences.get(key: String, value: Any?) = when {
+private fun SharedPreferences.get(key: String, value: Any?) = when {
   String::class.isInstance(value) -> getString(key, "")
   Int::class.isInstance(value) -> getInt(key, 0)
   Float::class.isInstance(value) -> getFloat(key, 0f)
