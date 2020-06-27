@@ -2,6 +2,7 @@ package dev.marshi.android.pack
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 
@@ -12,10 +13,19 @@ class MainActivity2 : AppCompatActivity() {
 
     fun creteIntent(context: Context) =
       Intent(context, MainActivity2::class.java).apply {
-        val content = Data(10, "a".repeat(10), 1000L, "non")
+        val content = Data(
+          10,
+          "a".repeat(10),
+          1000L,
+          SubData(
+            null, SubDataParcelable(
+              "1".repeat(10000000)
+            )
+          ),
+          "non"
+        )
         putPackedExtra(context, EXTRA, content)
       }
-
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {

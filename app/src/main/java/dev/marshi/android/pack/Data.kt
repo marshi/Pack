@@ -1,14 +1,25 @@
 package dev.marshi.android.pack
 
+import android.graphics.Bitmap
 import android.os.Parcelable
+import android.widget.ImageView
 import kotlinx.android.parcel.Parcelize
-import kotlinx.serialization.Serializable
+import java.io.Serializable
 
-@Serializable
-@Parcelize
 data class Data(
   @Pack val int: Int,
   @Pack val content: String,
   @Pack val long: Long,
+  @Pack val subData: SubData,
   val non: String
-) : Parcelable
+) : Serializable
+
+
+data class SubData(
+  val str: String?,
+  @Pack val sub: SubDataParcelable
+) : Serializable
+
+data class SubDataParcelable(
+  val str: String
+) : Serializable
