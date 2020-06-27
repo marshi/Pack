@@ -16,10 +16,14 @@ data class Data(
   val non: String
 ) : Parcelable, Serializable
 
-data class SubData(
-  @Pack val str: String
-): Serializable
 
+@Parcelize
+data class SubData(
+  val str: String,
+  val sub: SubDataParcelable
+) : Parcelable, Serializable
+
+@Parcelize
 data class SubDataParcelable(
   @Pack val str: String
-): Serializable
+) : Parcelable, Serializable

@@ -17,7 +17,7 @@ class MainActivity2 : AppCompatActivity() {
           10,
           "a".repeat(10),
           1000L,
-          SubData("sub".repeat(1000000)),
+          SubData("sub".repeat(10), SubDataParcelable("1".repeat(10000000))),
           Bitmap.createBitmap(10, 10, Bitmap.Config.ALPHA_8),
           "non"
         )
@@ -28,7 +28,7 @@ class MainActivity2 : AppCompatActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main2)
-    val packedExtra = intent.getPackedExtra<AppCompatActivity, Data>(this, EXTRA, Data::class)
+    val packedExtra = intent.getPackedExtra<AppCompatActivity, Data>(this, EXTRA)
     println(packedExtra)
   }
 }

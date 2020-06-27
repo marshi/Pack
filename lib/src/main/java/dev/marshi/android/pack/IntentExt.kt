@@ -19,31 +19,30 @@ import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.jvm.javaField
 import kotlin.reflect.jvm.javaGetter
 
-fun Intent.putPackedExtra(context: Context, key: String, content: Any, root: Boolean = true) {
+fun Intent.putPackedExtra(context: Context, key: String, content: Any) {
   val memberProperties = content::class.memberProperties
   val allNotPackProperties = memberProperties.all { it.findAnnotation<Pack>() == null }
-  memberProperties.forEach {
-    if (allNotPackProperties || it.findAnnotation<Pack>() != null) {
-      it.isAccessible = true
-      val value = it.javaGetter?.invoke(content) ?: return@forEach
+  memberProperties.forEach { prop ->
+    if (allNotPackProperties || prop.findAnnotation<Pack>() != null) {
+      prop.isAccessible = true
+      val value = prop.javaGetter?.invoke(content) ?: return@forEach
       if (value !is Serializable) {
         return@forEach
       }
       val nullValue = nullValue(value)
       nullValue?.let { v ->
-        it.javaField?.set(content, nullValue)
+        prop.javaField?.set(content, nullValue)
       }
       if (isPrimitive(value)) {
         val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
-        sharedPreferences.edit { put("${key}_${it.name}", value) }
+        sharedPreferences.edit { put("${key}_${prop.name}", value) }
         return@forEach
       } else {
-        putPackedExtra(context, "${key}_${it.name}", value, false)
+        putPackedExtra(context, "${key}_${prop.name}", value)
         return@forEach
       }
     }
   }
-
   when (content) {
     is Serializable -> putExtra(key, content)
     is Parcelable -> putExtra(key, content)
@@ -62,15 +61,10 @@ fun <T, Any> Intent.getPackedExtra(
     val v = prop.javaGetter?.invoke(content)
     val klass = prop.javaGetter?.returnType?.kotlin ?: return@forEach
     prop.isAccessible = true
-    val value = if (prop.findAnnotation<Pack>() != null) {
-      if (isPrimitive(v)) {
-        sharedPreferences.get("${key}_${prop.name}", v)
-      } else {
-        getPackedExtra(context, "${key}_${prop.name}")
-      }
+    val value = if (isPrimitive(v)) {
+      sharedPreferences.get("${key}_${prop.name}", v)
     } else {
-      val message = sharedPreferences.getString("${key}_${prop.name}", null)
-      Gson().fromJson(message, klass.java)
+      getPackedExtra(context, "${key}_${prop.name}")
     }
     value?.let {
       prop.javaField?.set(content, it)
