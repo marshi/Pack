@@ -3,16 +3,10 @@ package dev.marshi.android.pack
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.graphics.Bitmap
 import android.os.Parcelable
 import androidx.core.content.edit
 import androidx.lifecycle.LifecycleOwner
-import com.google.gson.Gson
 import java.io.Serializable
-import java.lang.ClassCastException
-import java.lang.IllegalArgumentException
-import kotlin.reflect.KClass
-import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
@@ -59,7 +53,6 @@ fun <T, Any> Intent.getPackedExtra(
 
   content::class.memberProperties.forEach { prop ->
     val v = prop.javaGetter?.invoke(content)
-    val klass = prop.javaGetter?.returnType?.kotlin ?: return@forEach
     prop.isAccessible = true
     val value = if (isPrimitive(v)) {
       sharedPreferences.get("${key}_${prop.name}", v)
@@ -101,7 +94,7 @@ private fun SharedPreferences.Editor.put(key: String, value: Any) {
     Double::class.isInstance(value) -> putFloat(key, value as Float)
     Boolean::class.isInstance(value) -> putBoolean(key, value as Boolean)
     Long::class.isInstance(value) -> putLong(key, value as Long)
-    else -> putString(key, Gson().toJson(value))
+    else -> throw IllegalArgumentException()
   }
 }
 
