@@ -5,12 +5,14 @@ import android.os.Parcelable
 import android.widget.ImageView
 import kotlinx.android.parcel.Parcelize
 import java.io.Serializable
+import java.text.DateFormat
 
 data class Data(
-  @Pack val int: Int,
+  val int: Int?,
   @Pack val content: String,
   @Pack val long: Long,
   @Pack val subData: SubData,
+  @Pack val dateFormat: DateFormat,
   val non: String
 ) : Serializable
 

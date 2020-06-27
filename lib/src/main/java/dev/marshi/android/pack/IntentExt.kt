@@ -46,24 +46,30 @@ fun Intent.putPackedExtra(context: Context, key: String, content: Any) {
 
 fun <T, Any> Intent.getPackedExtra(
   context: T,
-  key: String
+  key: String,
+  root: Boolean = true
 ): Any? where T : Context, T : LifecycleOwner {
   val sharedPreferences = context.getSharedPreferences("pref", Context.MODE_PRIVATE)
   val content = getSerializableExtra(key) ?: getParcelableExtra<Parcelable>(key) ?: return null
 
   content::class.memberProperties.forEach { prop ->
     val v = prop.javaGetter?.invoke(content)
+    if (v != nullValue(v)) {
+      return@forEach
+    }
     prop.isAccessible = true
     val value = if (isPrimitive(v)) {
       sharedPreferences.get("${key}_${prop.name}", v)
     } else {
-      getPackedExtra(context, "${key}_${prop.name}")
+      getPackedExtra(context, "${key}_${prop.name}", false)
     }
     value?.let {
       prop.javaField?.set(content, it)
     }
   }
-  context.lifecycle.addObserver(CleanSharedPreferenceObserver(sharedPreferences, key))
+  if (root) {
+    context.lifecycle.addObserver(CleanSharedPreferenceObserver(sharedPreferences))
+  }
   return content as Any?
 }
 
@@ -76,8 +82,8 @@ private fun isPrimitive(value: Any?) =
       Long::class.isInstance(value)
 
 
-private fun nullValue(value: Any) = when {
-  String::class.isInstance(value) -> ""
+private fun nullValue(value: Any?) = when {
+  String::class.isInstance(value) -> null
   Int::class.isInstance(value) -> 0
   Float::class.isInstance(value) -> 0f
   Double::class.isInstance(value) -> 0.0
@@ -99,7 +105,7 @@ private fun SharedPreferences.Editor.put(key: String, value: Any) {
 }
 
 private fun SharedPreferences.get(key: String, value: Any?) = when {
-  String::class.isInstance(value) -> getString(key, "")
+  String::class.isInstance(value) -> getString(key, null)
   Int::class.isInstance(value) -> getInt(key, 0)
   Float::class.isInstance(value) -> getFloat(key, 0f)
   Double::class.isInstance(value) -> getFloat(key, 0f)
